@@ -61,8 +61,9 @@ module.exports = function () {
                 return element.id === id;
             });
             if (userIndex !== -1) {
-                this.userList[userIndex].username = user.username;
-                this.userList[userIndex].password = user.password;
+                this.userList[userIndex].moviename = user;
+                //this.userList[userIndex].username = user.username;
+                //this.userList[userIndex].password = user.password;
                 return 1;
             }
             else {

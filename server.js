@@ -25,13 +25,15 @@ var router = express.Router();
 
 function getJSONObjectForMovieRequirement(req) {
     var json = {
+        status: "0", 
+        message: "No message",
         headers: "No headers",
-        key: process.env.UNIQUE_KEY,
-        body: "No body"
+        query: "No query",
+        env: process.env.UNIQUE_KEY
     };
 
     if (req.body != null) {
-        json.body = req.body;
+        json.query = req.body;
     }
 
     if (req.headers != null) {
@@ -72,6 +74,7 @@ router.post('/signin', (req, res) => {
     }
 });
 
+
 router.route('/testcollection')
     .delete(authController.isAuthenticated, (req, res) => {
         console.log(req.body);
@@ -93,7 +96,71 @@ router.route('/testcollection')
         res.json(o);
     }
     );
-    
+
+
+router.route('/movies')
+    .get((req, res) => {
+        // HTTP GET Method 
+        // Returns JSON object: { status: 200, message: ‘GET movies”, headers: headers: header from request, query: query string from request, env: your unique key }
+        var o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "GET movies";
+        console.log(req.body);
+        if (req.body.hasOwnProperty('moviename')){ // Check if GET request included specific movie name
+            o.query = db.findOne(req.body.moviename); // return that movie
+        }
+        else { // no movie specified 
+            o.query = db.findOne(); // return all movies
+        }
+        res.json(o);
+    })
+    .post((req, res) => {
+        // HTTP POST Method 
+        // Returns JSON object {“status”: 200, message: “movie saved”, headers: headers: header from request, query: query string from request, env: your unique key }
+        db.save(req.body);
+        var o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "movie saved";
+        res.json(o);
+    })
+    .put(authJwtController.isAuthenticated, (req, res) => {
+        // HTTP PUT Method
+        // Requires JWT authentication.
+        // Returns a JSON object with status, message, headers, query, and env.
+        console.log(req.body);
+        res = res.status(200);
+        if (req.get('Content-Type')) {
+            res = res.type(req.get('Content-Type'));
+        }
+        var update = db.update(req.body.id, req.body.moviename);
+        var o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "movie updated";
+        console.log(update);
+        res.json(o);
+    })
+    .delete(authController.isAuthenticated, (req, res) => {
+        // HTTP DELETE Method
+        // Requires Basic authentication.
+        // Returns a JSON object with status, message, headers, query, and env.
+        console.log(req.body);
+        res = res.status(200);
+        if (req.get('Content-Type')) {
+            res = res.type(req.get('Content-Type'));
+        }
+        var del = db.remove(req.body.id);
+        var o = getJSONObjectForMovieRequirement(req);
+        o.status = 200;
+        o.message = "movie deleted";
+        console.log(del);
+        res.json(o);
+    })
+    .all((req, res) => {
+        // Any other HTTP Method
+        // Returns a message stating that the HTTP method is unsupported.
+        res.status(405).send({ message: 'HTTP method not supported.' });
+    });
+
 app.use('/', router);
 app.listen(process.env.PORT || 8080);
 module.exports = app; // for testing only
